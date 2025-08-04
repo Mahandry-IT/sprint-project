@@ -7,6 +7,7 @@ public class SprintConfigurationLoader {
     private String errorPage;
     private String sessionRole = "idrole";
     private int cookieMaxAge = 60;
+    private String fileDirectory;
 
     public SprintConfigurationLoader(String errorPage) {
         this.errorPage = errorPage;
@@ -37,8 +38,9 @@ public class SprintConfigurationLoader {
     }
 
     public void initAttributes(Properties props) throws Exception {
-        this.errorPage = props.getProperty("error.page", "views/error.jsp");
-        this.sessionRole = props.getProperty("session.role", "idrole");
+        this.errorPage = props.getProperty("sprint.error.page", "views/error.jsp");
+        this.sessionRole = props.getProperty("sprint.session.role", "idrole");
+        this.fileDirectory = props.getProperty("sprint.file.directory", System.getProperty("user.dir") + "/save");
 
         try {
             this.cookieMaxAge = Integer.parseInt(props.getProperty("cookie.maxAge", "60"));
@@ -46,5 +48,13 @@ public class SprintConfigurationLoader {
             this.cookieMaxAge = 60;
             throw new Exception("Erreur lors du chargement de application.properties", e);
         }
+    }
+
+    public String getFileDirectory() {
+        return fileDirectory;
+    }
+
+    public void setFileDirectory(String fileDirectory) {
+        this.fileDirectory = fileDirectory;
     }
 }

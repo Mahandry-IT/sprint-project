@@ -11,10 +11,10 @@ import jakarta.servlet.http.Part;
 
 public class FileSave {
 
-    public static String saveFile(Part file, HttpServletRequest request) throws Exception {
+    public static String saveFile(Part file, HttpServletRequest request, SprintConfigurationLoader configurationLoader) throws Exception {
         if (file != null) {
             String project = request.getContextPath().substring(1);
-            String directoryPath = String.format("%s\\%s\\\\save", System.getProperty("user.dir"),project); // Utilise le répertoire de travail actuel
+            String directoryPath = String.format("%s\\%s", configurationLoader.getFileDirectory(),project); // Utilise le répertoire de travail actuel
             File directory = new File(directoryPath);
             if (!directory.exists()) {
                 directory.mkdirs();  // Crée le répertoire si nécessaire
