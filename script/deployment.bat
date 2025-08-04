@@ -13,6 +13,7 @@ set bin=.\..\bin
 set package=mg\itu
 set web=.\..\src\main\java\resources\templates
 set destination=D:\Logiciels\Tomcat 10.1\webapps
+set project=D:\Travail\ITU\ticketing\lib
 
 rem V\u00E9rifier si le dossier temp existe
 if exist "%temp%\" (
@@ -37,6 +38,7 @@ call compilateur.bat
 
 rem cr\u00E9ation de fichier .jar
 jar cvf "%lib%\%projet%.jar" -C "%bin%" . 
+copy /Y  "%lib%\%projet%.jar" "%project%"
 
 rem Copie des \u00E9lements n\u00E9cessaires vers classes de tomcat
 xcopy /E /I /Y "%lib%\" "%temp%\WEB-INF\lib"
