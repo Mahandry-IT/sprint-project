@@ -17,12 +17,13 @@ import java.util.*;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.GsonBuilder;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
+import mg.itu.prom16.LocalDateTimeAdapter;
 import jakarta.servlet.annotation.MultipartConfig;
 import mg.itu.annotation.*;
-import mg.itu.annotation.Error;
 import mg.itu.error.ErrorHandler;
 
 @MultipartConfig(
@@ -386,7 +387,7 @@ public class FrontController extends HttpServlet {
                     if (referer != null && referer.startsWith(contextPath)) {
                         relativePath = referer.substring(referer.indexOf(contextPath) + contextPath.length());
                     }
-                    Gson gson = new Gson();
+                    Gson gson = getGson();
                     String errorJson = gson.toJson(error);
                     String objetJson = gson.toJson(objet);
                     Cookie errorCookie = new Cookie("errorData", URLEncoder.encode(errorJson, "UTF-8"));
@@ -399,15 +400,15 @@ public class FrontController extends HttpServlet {
                     errorCookie.setMaxAge(60*60);
                     response.addCookie(errorCookie);
                     response.addCookie(objetCookie);
-                    if (method.isAnnotationPresent(Error.class)) {
-                        response.sendRedirect(request.getContextPath() + method.getAnnotation(Error.class).value());    
+                    if (method.isAnnotationPresent(mg.itu.annotation.Error.class)) {
+                        response.sendRedirect(request.getContextPath() + method.getAnnotation(mg.itu.annotation.Error.class).value());    
                     }
                     response.sendRedirect(request.getContextPath() + relativePath);
                 }
                 if (ob != null) {
                     if (annotation != null) {
                         response.setContentType("application/json");
-                        Gson gson = new Gson();
+                        Gson gson = getGson();
                         if (ob instanceof ModelAndView mw) {
                             JsonObject json = new JsonObject();
                             for (String key : mw.getData().keySet()) {
@@ -712,6 +713,14 @@ public class FrontController extends HttpServlet {
         } catch (Exception e) {
             throw new ErrorHandler(new Exception("Erreur lors de la v\u00E9rification des acc\u00E8s", e));
         }
+    }
+
+    public Gson getGson() {
+        Gson gson = new GsonBuilder()
+        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+        .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+        .create();
+        return gson;
     }
     
 
