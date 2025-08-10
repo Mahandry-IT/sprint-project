@@ -53,7 +53,7 @@ public class FrontController extends HttpServlet {
             } else {
                 throw new FileNotFoundException("Le fichier application.properties n'a pas \u00E9t\u00E9 trouv\u00E9 dans le classpath ni dans WEB-INF");
             }
-            sprintConfigurationLoader.initAttributes(configProps);
+            sprintConfigurationLoader = new SprintConfigurationLoader(configProps);
             
         } catch (Exception e) {
             throw new ServletException("Impossible de charger application.properties", e);
@@ -440,8 +440,10 @@ public class FrontController extends HttpServlet {
                                         + verbAction.getMethodName().getName() + "</b> est: <b>" + ob + "</b>.");
                             }
                         } else if (ob instanceof ModelAndView mw) {
-                            for (String cle : mw.getData().keySet()) {
-                                request.setAttribute(cle, mw.getData().get(cle));
+                            if (mw.getData() != null) {
+                                for (String cle : mw.getData().keySet()) {
+                                    request.setAttribute(cle, mw.getData().get(cle));
+                                }
                             }
                             RequestDispatcher dispatcher = request.getRequestDispatcher(mw.getUrl());
                             dispatcher.forward(request, response);

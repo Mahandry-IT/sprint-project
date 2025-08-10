@@ -2,7 +2,7 @@
 setlocal EnableDelayedExpansion
 
 rem D\u00E9finir le chemin d'acc\u00E8s au r\u00E9pertoire des sources et au r\u00E9pertoire de destination des fichiers compil\u00E9s
-set "sourceDirectory=.\..\src"
+set "sourceDirectory=.\..\src\main\java"
 set "destinationDirectory=.\..\bin"
 
 rem Chemin vers le r\u00E9pertoire contenant les biblioth\u00E8ques n\u00E9cessaires

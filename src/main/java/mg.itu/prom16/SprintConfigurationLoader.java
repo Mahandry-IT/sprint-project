@@ -9,8 +9,8 @@ public class SprintConfigurationLoader {
     private int cookieMaxAge = 60;
     private String fileDirectory;
 
-    public SprintConfigurationLoader(String errorPage) {
-        this.errorPage = errorPage;
+    public SprintConfigurationLoader(Properties props) throws Exception {
+        initAttributes(props);
     }
 
     public String getErrorPage() {

@@ -13,7 +13,7 @@ set bin=.\..\bin
 set package=mg\itu
 set web=.\..\src\main\java\resources\templates
 set destination=D:\Logiciels\Tomcat 10.1\webapps
-set project=D:\Travail\ITU\ticketing\lib
+set project=D:\Travail\ITU\ticketing-project\lib
 
 rem V\u00E9rifier si le dossier temp existe
 if exist "%temp%\" (
