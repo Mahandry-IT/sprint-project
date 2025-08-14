@@ -288,7 +288,15 @@ public class FrontController extends HttpServlet {
                             String paramName = field.getAnnotation(FormParametre.class).value();
                             if (paramMap.containsKey(paramName)) {
                                 field.setAccessible(true);
-                                field.set(paramObject, convertValue(field.getType(), paramMap.get(paramName), request, paramName));
+                                if (field.getType().isArray()) {
+                                    String[] values = request.getParameterValues(paramName);
+                                    Object array = convertArrayValue(field.getType().getComponentType(), values, request, paramName);
+                                    field.set(paramObject, array);
+                                } else {
+                                    String paramValue = paramMap.get(paramName);
+                                    Object converted = convertValue(field.getType(), paramValue, request, paramName);
+                                    field.set(paramObject, converted);
+                                }
                             }
                         }
                     }
@@ -305,18 +313,19 @@ public class FrontController extends HttpServlet {
                     for (Field field : paramType.getDeclaredFields()) {
                         if (field.isAnnotationPresent(FormParametre.class)) {
                             String paramName = field.getAnnotation(FormParametre.class).value();
-                            field.setAccessible(true);
-
-                            if (field.getType().isArray()) {
-                                String[] values = request.getParameterValues(paramName);
-
-                                Object array = convertArrayValue(field.getType().getComponentType(), values, request, paramName);
-                                field.set(paramObject, array);
-                            } else {
-                                String paramValue = paramMap.get(paramName);
-                                Object converted = convertValue(field.getType(), paramValue, request, paramName);
-                                field.set(paramObject, converted);
+                            if (paramMap.containsKey(paramName)) {
+                                field.setAccessible(true);
+                                if (field.getType().isArray()) {
+                                    String[] values = request.getParameterValues(paramName);
+                                    Object array = convertArrayValue(field.getType().getComponentType(), values, request, paramName);
+                                    field.set(paramObject, array);
+                                } else {
+                                    String paramValue = paramMap.get(paramName);
+                                    Object converted = convertValue(field.getType(), paramValue, request, paramName);
+                                    field.set(paramObject, converted);
+                                }
                             }
+
                         }
                     }
                     args[i] = paramObject;
@@ -610,6 +619,7 @@ public class FrontController extends HttpServlet {
         }
         return array;
     }
+
 
 
     private void validateAttributes(Object object) throws Exception {
