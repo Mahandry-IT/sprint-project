@@ -24,6 +24,7 @@ import jakarta.servlet.http.*;
 import mg.itu.prom16.LocalDateTimeAdapter;
 import jakarta.servlet.annotation.MultipartConfig;
 import mg.itu.annotation.*;
+
 import mg.itu.error.ErrorHandler;
 
 @MultipartConfig(
@@ -306,7 +307,12 @@ public class FrontController extends HttpServlet {
                             String paramName = field.getAnnotation(FormParametre.class).value();
                             if (paramMap.containsKey(paramName)) {
                                 field.setAccessible(true);
-                                field.set(paramObject, convertValue(field.getType(), paramMap.get(paramName), request, paramName));
+                                if (field.getType().isArray()) {
+                                    String[] values = request.getParameterValues(paramName);
+                                    field.set(paramObject, convertArrayValue(field.getType().getComponentType(), values, request, paramName));
+                                } else {
+                                    field.set(paramObject, convertValue(field.getType(), paramMap.get(paramName), request, paramName));
+                                }
                             }
                         }
                     }
@@ -486,7 +492,7 @@ public class FrontController extends HttpServlet {
             if (field.isAnnotationPresent(Numeric.class)) {
                 Numeric numeric = field.getAnnotation(Numeric.class);
                 double value = (Double) field.get(obj);
-                if (!Validator.validatePrecisionAndScale(value, numeric.precision(), numeric.scale())) {
+                if (!mg.itu.prom16.Validator.validatePrecisionAndScale(value, numeric.precision(), numeric.scale())) {
                     list.add("Valeur de d\u00E9cimal invalide pour le champ " + field.getName() + " (pr\u00E9cision: " + numeric.precision() + ", scale: " + numeric.scale() + ")");
                 }
                 error.put(field.getName(), list);
@@ -494,7 +500,7 @@ public class FrontController extends HttpServlet {
             if (field.isAnnotationPresent(mg.itu.annotation.Entier.class)) {
                 mg.itu.annotation.Entier numeric = field.getAnnotation(mg.itu.annotation.Entier.class);
                 int value = (Integer) field.get(obj);
-                if (!Validator.validateNumber(value, numeric.min(), numeric.max())) {
+                if (!mg.itu.prom16.Validator.validateNumber(value, numeric.min(), numeric.max())) {
                     list.add("Valeur d'entier hors limites pour le champ " + field.getName());
                 }
                 error.put(field.getName(), list);
@@ -502,7 +508,7 @@ public class FrontController extends HttpServlet {
             if (field.isAnnotationPresent(mg.itu.annotation.Date.class)) {
                 mg.itu.annotation.Date date = field.getAnnotation(mg.itu.annotation.Date.class);
                 java.sql.Date datesql = (java.sql.Date) field.get(obj);
-                if (!Validator.validateDate(datesql, date.format())) {
+                if (!mg.itu.prom16.Validator.validateDate(datesql, date.format())) {
                     list.add("Format de date invalide pour le champ " + field.getName());
                 }
                 error.put(field.getName(), list);
@@ -510,7 +516,7 @@ public class FrontController extends HttpServlet {
             if (field.isAnnotationPresent(mg.itu.annotation.DateHeure.class)) {
                 mg.itu.annotation.DateHeure dateHeure = field.getAnnotation(mg.itu.annotation.DateHeure.class);
                 java.sql.Timestamp datesql = (java.sql.Timestamp) field.get(obj);
-                if (!Validator.validateDateHeure(datesql, dateHeure.format())) {
+                if (!mg.itu.prom16.Validator.validateDateHeure(datesql, dateHeure.format())) {
                     list.add("Format de date et heure invalide pour le champ " + field.getName());
                 }
                 error.put(field.getName(), list);
@@ -518,14 +524,14 @@ public class FrontController extends HttpServlet {
             if (field.isAnnotationPresent(mg.itu.annotation.Temps.class)) {
                 mg.itu.annotation.Temps temps = field.getAnnotation(mg.itu.annotation.Temps.class);
                 java.sql.Time datesql = (java.sql.Time) field.get(obj);
-                if (!Validator.validateTemps(datesql, temps.format())) {
+                if (!mg.itu.prom16.Validator.validateTemps(datesql, temps.format())) {
                     list.add("Format d'heure invalide pour le champ " + field.getName());
                 }
                 error.put(field.getName(), list);
             }
             if (field.isAnnotationPresent(mg.itu.annotation.Bool.class)) {
                 Boolean boolea = (Boolean) field.get(obj);
-                if (!Validator.validateBoolean(boolea)) {
+                if (!mg.itu.prom16.Validator.validateBoolean(boolea)) {
                     list.add("Format de boolean invalide pour le champ " + field.getName());
                 }
                 error.put(field.getName(), list);
@@ -542,41 +548,41 @@ public class FrontController extends HttpServlet {
                 if (value < numeric.min() || value > numeric.max()) {
                     error.get(field.getName()).add("Valeur de " + field.getName() + " hors limites");
                 }
-                if (!Validator.validatePrecisionAndScale(value, numeric.precision(), numeric.scale())) {
+                if (!mg.itu.prom16.Validator.validatePrecisionAndScale(value, numeric.precision(), numeric.scale())) {
                     error.get(field.getName()).add("Valeur de d\u00E9cimal invalide pour le champ " + field.getName() + " (pr\u00E9cision: " + numeric.precision() + ", scale: " + numeric.scale() + ")");
                 }
             }
             if (field.isAnnotationPresent(mg.itu.annotation.Entier.class)) {
                 mg.itu.annotation.Entier numeric = field.getAnnotation(mg.itu.annotation.Entier.class);
                 int value = (Integer) field.get(obj);
-                if (!Validator.validateNumber(value, numeric.min(), numeric.max())) {
+                if (!mg.itu.prom16.Validator.validateNumber(value, numeric.min(), numeric.max())) {
                     error.get(field.getName()).add("Valeur d'entier hors limites pour le champ " + field.getName());
                 }
             }
             if (field.isAnnotationPresent(mg.itu.annotation.Date.class)) {
                 mg.itu.annotation.Date date = field.getAnnotation(mg.itu.annotation.Date.class);
                 java.sql.Date datesql = (java.sql.Date) field.get(obj);
-                if (!Validator.validateDate(datesql, date.format())) {
+                if (!mg.itu.prom16.Validator.validateDate(datesql, date.format())) {
                     error.get(field.getName()).add("Format de date invalide pour le champ " + field.getName());
                 }
             }
             if (field.isAnnotationPresent(mg.itu.annotation.DateHeure.class)) {
                 mg.itu.annotation.DateHeure dateHeure = field.getAnnotation(mg.itu.annotation.DateHeure.class);
                 java.sql.Timestamp datesql = (java.sql.Timestamp) field.get(obj);
-                if (!Validator.validateDateHeure(datesql, dateHeure.format())) {
+                if (!mg.itu.prom16.Validator.validateDateHeure(datesql, dateHeure.format())) {
                     error.get(field.getName()).add("Format de date et heure invalide pour le champ " + field.getName());
                 }
             }
             if (field.isAnnotationPresent(mg.itu.annotation.Temps.class)) {
                 mg.itu.annotation.Temps temps = field.getAnnotation(mg.itu.annotation.Temps.class);
                 java.sql.Time datesql = (java.sql.Time) field.get(obj);
-                if (!Validator.validateTemps(datesql, temps.format())) {
+                if (!mg.itu.prom16.Validator.validateTemps(datesql, temps.format())) {
                     error.get(field.getName()).add("Format d'heure invalide pour le champ " + field.getName());
                 }
             }
             if (field.isAnnotationPresent(mg.itu.annotation.Bool.class)) {
                 Boolean boolea = (Boolean) field.get(obj);
-                if (!Validator.validateBoolean(boolea)) {
+                if (!mg.itu.prom16.Validator.validateBoolean(boolea)) {
                     error.get(field.getName()).add("Format de boolean invalide pour le champ " + field.getName());
                 }
             }
@@ -590,6 +596,18 @@ public class FrontController extends HttpServlet {
             validateWithError(obj);
         }
     }
+
+    private Object convertArrayValue(Class<?> componentType, String[] values, HttpServletRequest request, String paramName) throws Exception {
+        if (values == null) return null;
+
+        Object array = java.lang.reflect.Array.newInstance(componentType, values.length);
+        for (int i = 0; i < values.length; i++) {
+            Object convertedValue = convertValue(componentType, values[i], request, paramName);
+            java.lang.reflect.Array.set(array, i, convertedValue);
+        }
+        return array;
+    }
+
 
     private void validateAttributes(Object object) throws Exception {
         error = new HashMap<>();
