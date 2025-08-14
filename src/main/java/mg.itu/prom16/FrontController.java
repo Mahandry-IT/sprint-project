@@ -305,14 +305,17 @@ public class FrontController extends HttpServlet {
                     for (Field field : paramType.getDeclaredFields()) {
                         if (field.isAnnotationPresent(FormParametre.class)) {
                             String paramName = field.getAnnotation(FormParametre.class).value();
-                            if (paramMap.containsKey(paramName)) {
-                                field.setAccessible(true);
-                                if (field.getType().isArray()) {
-                                    String[] values = request.getParameterValues(paramName);
-                                    field.set(paramObject, convertArrayValue(field.getType().getComponentType(), values, request, paramName));
-                                } else {
-                                    field.set(paramObject, convertValue(field.getType(), paramMap.get(paramName), request, paramName));
-                                }
+                            field.setAccessible(true);
+
+                            if (field.getType().isArray()) {
+                                String[] values = request.getParameterValues(paramName);
+
+                                Object array = convertArrayValue(field.getType().getComponentType(), values, request, paramName);
+                                field.set(paramObject, array);
+                            } else {
+                                String paramValue = paramMap.get(paramName);
+                                Object converted = convertValue(field.getType(), paramValue, request, paramName);
+                                field.set(paramObject, converted);
                             }
                         }
                     }
