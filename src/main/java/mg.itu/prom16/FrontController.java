@@ -183,6 +183,26 @@ public class FrontController extends HttpServlet {
             } catch (ParseException e) {
                 throw new IllegalArgumentException("Format de temps invalide, attendu: HH:mm:ss", e);
             }
+        } else if (targetType == LocalDateTime.class) {
+            if (value == null || value.trim().isEmpty()) {
+                return null; 
+            }
+            if (value.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}")) {
+                return LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            }
+            else if (value.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}")) {
+                return LocalDateTime.parse(value + ":00", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            }
+            else if (value.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}")) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                return LocalDateTime.parse(value, formatter);
+            }
+            else if (value.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                return LocalDateTime.parse(value, formatter);
+            } else {
+                throw new IllegalArgumentException("Format LocalDateTime invalide : " + value);
+            }
         } else {
             throw new IllegalArgumentException("Type de paramètre non supporté: " + targetType);
         }
