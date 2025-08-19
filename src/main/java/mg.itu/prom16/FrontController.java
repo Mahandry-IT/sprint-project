@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -106,6 +107,32 @@ public class FrontController extends HttpServlet {
     public Object convertValue(Class<?> targetType, String value, HttpServletRequest request, String paramName) throws Exception {
         if (targetType == Part.class) {
             return request.getPart(paramName);
+        }
+
+        // Gestion des List<Part> (liste de fichiers)
+        if (targetType == List.class && paramName != null) {
+            try {
+                // Vérifie si c'est une liste de fichiers
+                Collection<Part> parts = request.getParts();
+                List<Part> fileParts = parts.stream()
+                    .filter(part -> part.getName().equals(paramName) && part.getSize() > 0)
+                    .collect(Collectors.toList());
+                
+                if (!fileParts.isEmpty()) {
+                    return fileParts;
+                }
+            } catch (Exception e) {
+                
+            }
+        }
+
+        // Handle List type
+        if (List.class.isAssignableFrom(targetType)) {
+            String[] values = request.getParameterValues(paramName);
+            if (values == null) {
+                return new ArrayList<>(); 
+            }
+            return Arrays.asList(values);
         }
     
         // Si la valeur est vide, assigner une valeur par défaut
@@ -302,24 +329,54 @@ public class FrontController extends HttpServlet {
                     args[i] = session;
                 } else if (methodParams[i].isAnnotationPresent(RequestBody.class)) {
                     Class<?> paramType = methodParams[i].getType();
-                    Object paramObject = paramType.getDeclaredConstructor().newInstance();
-                    for (Field field : paramType.getDeclaredFields()) {
-                        if (field.isAnnotationPresent(FormParametre.class)) {
-                            String paramName = field.getAnnotation(FormParametre.class).value();
-                            if (paramMap.containsKey(paramName)) {
-                                field.setAccessible(true);
-                                if (field.getType().isArray()) {
-                                    String[] values = request.getParameterValues(paramName);
-                                    Object array = convertArrayValue(field.getType().getComponentType(), values, request, paramName);
-                                    field.set(paramObject, array);
-                                } else {
-                                    String paramValue = paramMap.get(paramName);
-                                    Object converted = convertValue(field.getType(), paramValue, request, paramName);
-                                    field.set(paramObject, converted);
+                    Object paramObject;
+                    
+                    if (request.getContentType() != null && request.getContentType().contains("application/json")) {
+                        BufferedReader reader = request.getReader();
+                        Gson gson = getGson();
+                        paramObject = gson.fromJson(reader, paramType);
+                    } 
+                    else {
+                        paramObject = paramType.getDeclaredConstructor().newInstance();
+                        for (Field field : paramType.getDeclaredFields()) {
+                            if (field.isAnnotationPresent(FormParametre.class)) {
+                                String paramName = field.getAnnotation(FormParametre.class).value();
+                                if (paramMap.containsKey(paramName)) {
+                                    field.setAccessible(true);
+                                    if (field.getType().isArray()) {
+                                        String[] values = request.getParameterValues(paramName);
+                                        Object array = convertArrayValue(field.getType().getComponentType(), values, request, paramName);
+                                        field.set(paramObject, array);
+                                    } 
+                                    else if (Collection.class.isAssignableFrom(field.getType())) {
+                                        String[] values = request.getParameterValues(paramName);
+                                        if (values != null) {
+                                            ParameterizedType listType = (ParameterizedType) field.getGenericType();
+                                            Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
+
+                                            List<Object> convertedList = new ArrayList<>();
+                                            for (String v : values) {
+                                                Object converted = convertValue(elementType, v, request, paramName);
+                                                convertedList.add(converted);
+                                            }
+
+                                            if (Set.class.isAssignableFrom(field.getType())) {
+                                                field.set(paramObject, new HashSet<>(convertedList));
+                                            } else {
+                                                field.set(paramObject, convertedList);
+                                            }
+                                        }
+                                    } 
+                                    else {
+                                        String paramValue = paramMap.get(paramName);
+                                        Object converted = convertValue(field.getType(), paramValue, request, paramName);
+                                        field.set(paramObject, converted);
+                                    }
                                 }
                             }
                         }
                     }
+
                     validateAttributes(paramObject);
                     validate(paramObject);
                     objet = paramObject;
@@ -327,7 +384,7 @@ public class FrontController extends HttpServlet {
                         return null; 
                     }
                     args[i] = paramObject;
-                } else if (methodParams[i].isAnnotationPresent(RequestParam.class)) {
+                }  else if (methodParams[i].isAnnotationPresent(RequestParam.class)) {
                     Class<?> paramType = methodParams[i].getType();
                     Object paramObject = paramType.getDeclaredConstructor().newInstance();
                     for (Field field : paramType.getDeclaredFields()) {
@@ -339,7 +396,27 @@ public class FrontController extends HttpServlet {
                                     String[] values = request.getParameterValues(paramName);
                                     Object array = convertArrayValue(field.getType().getComponentType(), values, request, paramName);
                                     field.set(paramObject, array);
-                                } else {
+                                } 
+                                else if (Collection.class.isAssignableFrom(field.getType())) {
+                                    String[] values = request.getParameterValues(paramName);
+                                    if (values != null) {
+                                        ParameterizedType listType = (ParameterizedType) field.getGenericType();
+                                        Class<?> elementType = (Class<?>) listType.getActualTypeArguments()[0];
+
+                                        List<Object> convertedList = new ArrayList<>();
+                                        for (String v : values) {
+                                            Object converted = convertValue(elementType, v, request, paramName);
+                                            convertedList.add(converted);
+                                        }
+
+                                        if (Set.class.isAssignableFrom(field.getType())) {
+                                            field.set(paramObject, new HashSet<>(convertedList));
+                                        } else {
+                                            field.set(paramObject, convertedList);
+                                        }
+                                    }
+                                } 
+                                else {
                                     String paramValue = paramMap.get(paramName);
                                     Object converted = convertValue(field.getType(), paramValue, request, paramName);
                                     field.set(paramObject, converted);
